@@ -1,0 +1,26 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata: { name: partner-integration-mock, namespace: cvp }
+spec:
+  replicas: 1
+  selector: { matchLabels: { app.kubernetes.io/name: partner-integration-mock } }
+  template:
+    metadata: { labels: { app.kubernetes.io/name: partner-integration-mock } }
+    spec:
+      containers:
+        - name: partner-integration-mock
+          image: cvp-partner-integration-mock:latest
+          imagePullPolicy: IfNotPresent
+          ports: [ { name: http, containerPort: 8090 } ]
+          env:
+            - { name: PARTNER_MOCK_APPOINTMENT_BASE_URL, value: http://appointment-service:8085 }
+          readinessProbe: { httpGet: { path: /actuator/health/readiness, port: http }, initialDelaySeconds: 10 }
+          livenessProbe: { httpGet: { path: /actuator/health/liveness, port: http }, initialDelaySeconds: 20 }
+          resources: { requests: { cpu: 100m, memory: 256Mi }, limits: { cpu: 500m, memory: 512Mi } }
+---
+apiVersion: v1
+kind: Service
+metadata: { name: partner-integration-mock, namespace: cvp }
+spec:
+  selector: { app.kubernetes.io/name: partner-integration-mock }
+  ports: [ { name: http, port: 8090, targetPort: http } ]

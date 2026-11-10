@@ -1,0 +1,22 @@
+spring:
+  application:
+    name: cvp-inventory-service
+  datasource:
+    url: ${INVENTORY_DB_URL:jdbc:postgresql://localhost:5432/inventory}
+    username: ${INVENTORY_DB_USERNAME:inventory}
+    password: ${INVENTORY_DB_PASSWORD:}
+  jpa:
+    hibernate:
+      ddl-auto: validate
+  flyway:
+    enabled: true
+  kafka:
+    bootstrap-servers: ${INVENTORY_KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+inventory:
+  outbox:
+    fixed-delay-ms: ${INVENTORY_OUTBOX_FIXED_DELAY_MS:1000}
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info

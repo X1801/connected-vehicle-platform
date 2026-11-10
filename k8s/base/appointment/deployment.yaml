@@ -1,0 +1,26 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: appointment-service
+  namespace: cvp
+  labels: { app: appointment-service, app.kubernetes.io/name: cvp-appointment-service, app.kubernetes.io/part-of: cvp-platform }
+spec:
+  replicas: 1
+  strategy: { type: RollingUpdate, rollingUpdate: { maxSurge: 0, maxUnavailable: 1 } }
+  selector: { matchLabels: { app: appointment-service } }
+  template:
+    metadata: { labels: { app: appointment-service, app.kubernetes.io/name: cvp-appointment-service, app.kubernetes.io/part-of: cvp-platform } }
+    spec:
+      containers:
+        - name: appointment
+          image: docker.io/library/cvp-appointment-service:k8s-20261104-1608
+          imagePullPolicy: IfNotPresent
+          ports: [{ name: http, containerPort: 8085 }]
+          envFrom: [{ configMapRef: { name: cvp-app-config } }]
+          env:
+            - name: APPOINTMENT_DB_PASSWORD
+              valueFrom: { secretKeyRef: { name: cvp-database-credentials, key: CVP_DB_PASSWORD } }
+          readinessProbe: { httpGet: { path: /actuator/health/readiness, port: http }, initialDelaySeconds: 20, timeoutSeconds: 10, periodSeconds: 5 }
+          startupProbe: { httpGet: { path: /actuator/health, port: http }, periodSeconds: 5, timeoutSeconds: 3, failureThreshold: 180 }
+          livenessProbe: { httpGet: { path: /actuator/health/liveness, port: http }, initialDelaySeconds: 50, timeoutSeconds: 10, periodSeconds: 15, failureThreshold: 6 }
+          resources: { requests: { cpu: 100m, memory: 192Mi }, limits: { cpu: 700m, memory: 512Mi } }

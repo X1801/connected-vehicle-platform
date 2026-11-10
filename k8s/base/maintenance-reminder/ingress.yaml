@@ -1,0 +1,19 @@
+# Source: cvp-maintenance-reminder-service/k8s/07-ingress.yaml; backend points to the existing live Service.
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: maintenance-reminder-ingress
+  namespace: cvp
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: maintenance-reminder.local
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: maintenance-reminder-service
+                port:
+                  number: 8080

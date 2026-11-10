@@ -1,0 +1,40 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: cvp-postgres
+  namespace: cvp
+  labels: { app: cvp-postgres, app.kubernetes.io/part-of: cvp-platform }
+spec:
+  serviceName: postgres
+  replicas: 1
+  selector:
+    matchLabels: { app: cvp-postgres }
+  template:
+    metadata:
+      labels: { app: cvp-postgres, app.kubernetes.io/part-of: cvp-platform }
+    spec:
+      containers:
+        - name: postgres
+          image: docker.io/library/postgres:16-alpine
+          imagePullPolicy: IfNotPresent
+          ports: [{ name: postgres, containerPort: 5432 }]
+          env:
+            - { name: POSTGRES_DB, value: maintenance-reminder }
+            - { name: POSTGRES_USER, value: cvp_test }
+            - name: POSTGRES_PASSWORD
+              valueFrom: { secretKeyRef: { name: cvp-database-credentials, key: CVP_DB_PASSWORD } }
+            - name: AI_ASSISTANT_DB_PASSWORD
+              valueFrom: { secretKeyRef: { name: cvp-database-credentials, key: AI_ASSISTANT_DB_PASSWORD } }
+          volumeMounts:
+            - { name: data, mountPath: /var/lib/postgresql/data }
+            - { name: init, mountPath: /docker-entrypoint-initdb.d/01-databases.sh, subPath: 01-databases.sh, readOnly: true }
+          readinessProbe:
+            exec: { command: [sh, -c, "pg_isready -U cvp_test -d maintenance-reminder"] }
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          resources:
+            requests: { cpu: 100m, memory: 128Mi }
+            limits: { cpu: 700m, memory: 512Mi }
+      volumes:
+        - { name: data, persistentVolumeClaim: { claimName: cvp-postgres-data } }
+        - { name: init, configMap: { name: cvp-postgres-init, defaultMode: 0755 } }

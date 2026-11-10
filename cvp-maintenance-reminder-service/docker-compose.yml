@@ -1,0 +1,116 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: maintenance-reminder
+      POSTGRES_USER: ${CVP_MAINTENANCE_REMINDER_POSTGRES_USER:?Set CVP_MAINTENANCE_REMINDER_POSTGRES_USER}
+      POSTGRES_PASSWORD: ${CVP_MAINTENANCE_REMINDER_POSTGRES_PASSWORD:?Set CVP_MAINTENANCE_REMINDER_POSTGRES_PASSWORD}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${CVP_MAINTENANCE_REMINDER_POSTGRES_USER:?Set CVP_MAINTENANCE_REMINDER_POSTGRES_USER} -d maintenance-reminder"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  kafka:
+    image: apache/kafka:3.9.0
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_LISTENERS: PLAINTEXT://:9092,CONTROLLER://:9093
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+    ports:
+      - "9092:9092"
+
+  telemetry-postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: telemetry
+      POSTGRES_USER: ${TELEMETRY_POSTGRES_USER:?Set TELEMETRY_POSTGRES_USER}
+      POSTGRES_PASSWORD: ${TELEMETRY_POSTGRES_PASSWORD:?Set TELEMETRY_POSTGRES_PASSWORD}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${TELEMETRY_POSTGRES_USER:?Set TELEMETRY_POSTGRES_USER} -d telemetry"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    volumes:
+      - telemetry-postgres-data:/var/lib/postgresql/data
+
+  cvp-telemetry-service:
+    build: ../cvp-telemetry-service
+    image: cvp-telemetry-service:local
+    environment:
+      TELEMETRY_DB_URL: jdbc:postgresql://telemetry-postgres:5432/telemetry
+      TELEMETRY_DB_USERNAME: ${TELEMETRY_POSTGRES_USER:?Set TELEMETRY_POSTGRES_USER}
+      TELEMETRY_DB_PASSWORD: ${TELEMETRY_POSTGRES_PASSWORD:?Set TELEMETRY_POSTGRES_PASSWORD}
+      TELEMETRY_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+    depends_on:
+      telemetry-postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_started
+    ports:
+      - "8081:8080"
+
+  notification-mock:
+    build: ./mocks/notification-kafka
+    image: cvp-notification-mock:1.0
+    environment:
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+
+  authorization-mock:
+    image: wiremock/wiremock:3.9.1
+    volumes:
+      - ./local-mocks/authorization:/home/wiremock
+    ports:
+      - "8083:8080"
+
+  appointment-provider-mock:
+    image: wiremock/wiremock:3.9.1
+    volumes:
+      - ./local-mocks/appointment-provider:/home/wiremock
+    ports:
+      - "8084:8080"
+
+  maintenance-reminder-service:
+    build: .
+    environment:
+      CVP_MAINTENANCE_REMINDER_DB_URL: jdbc:postgresql://postgres:5432/maintenance-reminder
+      CVP_MAINTENANCE_REMINDER_DB_USERNAME: ${CVP_MAINTENANCE_REMINDER_POSTGRES_USER:?Set CVP_MAINTENANCE_REMINDER_POSTGRES_USER}
+      CVP_MAINTENANCE_REMINDER_DB_PASSWORD: ${CVP_MAINTENANCE_REMINDER_POSTGRES_PASSWORD:?Set CVP_MAINTENANCE_REMINDER_POSTGRES_PASSWORD}
+      CVP_MAINTENANCE_REMINDER_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      CVP_TELEMETRY_BASE_URL: http://cvp-telemetry-service:8080
+      CVP_NOTIFICATION_BASE_URL: http://notification-mock:8080
+      CVP_AUTHORIZATION_BASE_URL: http://authorization-mock:8080
+      CVP_APPOINTMENT_PROVIDER_BASE_URL: http://appointment-provider-mock:8080
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_started
+      cvp-telemetry-service:
+        condition: service_started
+      notification-mock:
+        condition: service_started
+      authorization-mock:
+        condition: service_started
+      appointment-provider-mock:
+        condition: service_started
+    ports:
+      - "8080:8080"
+    networks:
+      - default
+
+volumes:
+  postgres-data:
+  telemetry-postgres-data:

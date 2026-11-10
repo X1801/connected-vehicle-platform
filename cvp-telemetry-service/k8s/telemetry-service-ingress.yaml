@@ -1,0 +1,18 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: cvp-telemetry-service-ingress
+  namespace: cvp
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: telemetry.local
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: cvp-telemetry-service
+                port:
+                  number: 8080

@@ -1,0 +1,18 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: ai-assistant-ingress
+  namespace: cvp
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: assistant.local
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: cvp-ai-assistant
+                port:
+                  number: 8080

@@ -1,0 +1,4 @@
+{
+  "request": { "method": "GET", "urlPath": "/v1/appointments/availability" },
+  "response": { "status": 200, "headers": { "Content-Type": "application/json" }, "jsonBody": { "available": true } }
+}

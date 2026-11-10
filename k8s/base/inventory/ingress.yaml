@@ -1,0 +1,13 @@
+# Source: cvp-inventory-service/k8s/inventory-service-ingress.yaml; backend points to the existing live Service.
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata: {name: inventory-service-ingress, namespace: cvp}
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: inventory.local
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend: {service: {name: inventory-service, port: {number: 8080}}}

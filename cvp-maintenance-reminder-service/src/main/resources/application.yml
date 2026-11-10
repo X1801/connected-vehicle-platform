@@ -1,0 +1,65 @@
+spring:
+  application:
+    name: cvp-maintenance-reminder-service
+  datasource:
+    url: ${CVP_MAINTENANCE_REMINDER_DB_URL:jdbc:postgresql://localhost:5432/maintenance-reminder}
+    username: ${CVP_MAINTENANCE_REMINDER_DB_USERNAME:}
+    password: ${CVP_MAINTENANCE_REMINDER_DB_PASSWORD:}
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+  kafka:
+    bootstrap-servers: ${CVP_MAINTENANCE_REMINDER_KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    consumer:
+      group-id: ${CVP_MAINTENANCE_REMINDER_KAFKA_CONSUMER_GROUP:maintenance-reminder}
+      enable-auto-commit: false
+      auto-offset-reset: earliest
+      properties:
+        spring.json.trusted.packages: "com.cvp.maintenance"
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+    producer:
+      acks: all
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+
+server:
+  port: ${CVP_MAINTENANCE_REMINDER_SERVER_PORT:8080}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus,metrics,mappings
+  endpoint:
+    health:
+      probes:
+        enabled: true
+
+maintenance-reminder:
+  integration:
+    telemetry:
+      base-url: ${CVP_TELEMETRY_BASE_URL:http://localhost:8081}
+      maintenance-state-topic: ${CVP_TELEMETRY_MAINTENANCE_STATE_TOPIC:telemetry.vehicle-maintenance-state.v1}
+    inventory:
+      base-url: ${CVP_INVENTORY_BASE_URL:http://localhost:8085}
+      change-topic: ${CVP_INVENTORY_CHANGE_TOPIC:inventory.vehicle-master-changed.v1}
+    notification:
+      base-url: ${CVP_NOTIFICATION_BASE_URL:http://localhost:8082}
+      notification-request-topic: ${CVP_NOTIFICATION_REQUEST_TOPIC:cvp.notification-request.v1}
+      notification-status-topic: ${CVP_NOTIFICATION_STATUS_TOPIC:cvp.notification-status.v1}
+    authorization:
+      base-url: ${CVP_AUTHORIZATION_BASE_URL:http://localhost:8083}
+      issuer-uri: ${CVP_AUTHORIZATION_ISSUER_URI:http://localhost:8083}
+    appointment-provider:
+      base-url: ${CVP_APPOINTMENT_PROVIDER_BASE_URL:http://localhost:8084}
+      appointment-status-topic: ${CVP_APPOINTMENT_PROVIDER_APPOINTMENT_STATUS_TOPIC:cvp.appointment-status.v1}
+    appointment:
+      booked-topic: ${CVP_APPOINTMENT_BOOKED_TOPIC:appointment.booked.v1}
+      completed-topic: ${CVP_APPOINTMENT_COMPLETED_TOPIC:appointment.completed.v1}
+  outbox:
+    fixed-delay-ms: ${CVP_MAINTENANCE_REMINDER_OUTBOX_FIXED_DELAY_MS:1000}

@@ -1,0 +1,141 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: authorization-mock-mappings
+  namespace: cvp
+data:
+  authorized.json: |
+    {"priority":1,"request":{"method":"GET","urlPath":"/v1/access/vehicles/TEST-VEHICLE","queryParameters":{"subject":{"equalTo":"authorized-subject"}}},"response":{"status":200,"headers":{"Content-Type":"application/json"},"jsonBody":{"authorized":true}}}
+  unauthorized.json: |
+    {"priority":10,"request":{"method":"GET","urlPath":"/v1/access/vehicles/TEST-VEHICLE"},"response":{"status":200,"headers":{"Content-Type":"application/json"},"jsonBody":{"authorized":false}}}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: appointment-provider-mock-mappings
+  namespace: cvp
+data:
+  availability.json: |
+    {"request":{"method":"GET","urlPath":"/v1/appointments/availability"},"response":{"status":200,"headers":{"Content-Type":"application/json"},"jsonBody":{"available":true}}}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: notification-mock
+  namespace: cvp
+  labels:
+    app.kubernetes.io/name: notification-mock
+    app.kubernetes.io/component: mock
+    app.kubernetes.io/part-of: maintenance-reminder
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: notification-mock
+      app.kubernetes.io/component: mock
+      app.kubernetes.io/part-of: maintenance-reminder
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: notification-mock
+        app.kubernetes.io/component: mock
+        app.kubernetes.io/part-of: maintenance-reminder
+    spec:
+      containers:
+        - name: notification-mock
+          image: cvp-notification-mock:1.0
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: KAFKA_BOOTSTRAP_SERVERS
+              value: kafka:9092
+          resources: {requests: {cpu: 50m, memory: 128Mi}, limits: {cpu: 250m, memory: 256Mi}}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: authorization-mock
+  namespace: cvp
+  labels:
+    app.kubernetes.io/name: authorization-mock
+    app.kubernetes.io/component: mock
+    app.kubernetes.io/part-of: maintenance-reminder
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: authorization-mock
+      app.kubernetes.io/component: mock
+      app.kubernetes.io/part-of: maintenance-reminder
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: authorization-mock
+        app.kubernetes.io/component: mock
+        app.kubernetes.io/part-of: maintenance-reminder
+    spec:
+      containers:
+        - name: wiremock
+          image: wiremock/wiremock:3.9.1
+          imagePullPolicy: IfNotPresent
+          ports: [{name: http, containerPort: 8080}]
+          volumeMounts: [{name: mappings, mountPath: /home/wiremock/mappings}]
+          readinessProbe: {httpGet: {path: /__admin/mappings, port: http}, initialDelaySeconds: 5}
+          resources: {requests: {cpu: 50m, memory: 128Mi}, limits: {cpu: 250m, memory: 256Mi}}
+      volumes: [{name: mappings, configMap: {name: authorization-mock-mappings}}]
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: authorization-mock
+  namespace: cvp
+spec:
+  selector:
+    app.kubernetes.io/name: authorization-mock
+    app.kubernetes.io/component: mock
+    app.kubernetes.io/part-of: maintenance-reminder
+  ports: [{name: http, port: 8080, targetPort: http}]
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: appointment-provider-mock
+  namespace: cvp
+  labels:
+    app.kubernetes.io/name: appointment-provider-mock
+    app.kubernetes.io/component: mock
+    app.kubernetes.io/part-of: maintenance-reminder
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: appointment-provider-mock
+      app.kubernetes.io/component: mock
+      app.kubernetes.io/part-of: maintenance-reminder
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: appointment-provider-mock
+        app.kubernetes.io/component: mock
+        app.kubernetes.io/part-of: maintenance-reminder
+    spec:
+      containers:
+        - name: wiremock
+          image: wiremock/wiremock:3.9.1
+          imagePullPolicy: IfNotPresent
+          ports: [{name: http, containerPort: 8080}]
+          volumeMounts: [{name: mappings, mountPath: /home/wiremock/mappings}]
+          readinessProbe: {httpGet: {path: /__admin/mappings, port: http}, initialDelaySeconds: 5}
+          resources: {requests: {cpu: 50m, memory: 128Mi}, limits: {cpu: 250m, memory: 256Mi}}
+      volumes: [{name: mappings, configMap: {name: appointment-provider-mock-mappings}}]
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: appointment-provider-mock
+  namespace: cvp
+spec:
+  selector:
+    app.kubernetes.io/name: appointment-provider-mock
+    app.kubernetes.io/component: mock
+    app.kubernetes.io/part-of: maintenance-reminder
+  ports: [{name: http, port: 8080, targetPort: http}]

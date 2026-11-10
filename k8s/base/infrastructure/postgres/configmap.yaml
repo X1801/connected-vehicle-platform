@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cvp-postgres-init
+  namespace: cvp
+data:
+  01-databases.sh: |
+    #!/bin/sh
+    set -eu
+    psql -v ON_ERROR_STOP=1 --set=assistant_password="$AI_ASSISTANT_DB_PASSWORD" -U "$POSTGRES_USER" -d "$POSTGRES_DB" <<'SQL'
+    CREATE ROLE ai_assistant LOGIN PASSWORD :'assistant_password';
+    CREATE DATABASE appointment OWNER cvp_test;
+    CREATE DATABASE inventory OWNER cvp_test;
+    CREATE DATABASE telemetry OWNER cvp_test;
+    CREATE DATABASE ai_assistant OWNER ai_assistant;
+    SQL

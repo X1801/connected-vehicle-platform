@@ -1,0 +1,5 @@
+{
+  "priority": 1,
+  "request": { "method": "GET", "urlPath": "/v1/access/vehicles/TEST-VEHICLE", "queryParameters": { "subject": { "equalTo": "authorized-subject" } } },
+  "response": { "status": 200, "headers": { "Content-Type": "application/json" }, "jsonBody": { "authorized": true } }
+}

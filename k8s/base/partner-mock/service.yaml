@@ -1,0 +1,4 @@
+apiVersion: v1
+kind: Service
+metadata: { name: partner-integration-mock, namespace: cvp, labels: { app: partner-integration-mock, app.kubernetes.io/part-of: cvp-platform } }
+spec: { selector: { app: partner-integration-mock }, ports: [{ name: http, port: 8090, targetPort: http }] }

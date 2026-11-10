@@ -1,0 +1,30 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cvp-ai-assistant-config
+  namespace: cvp
+  labels:
+    app.kubernetes.io/name: cvp-ai-assistant
+    app.kubernetes.io/component: configuration
+    app.kubernetes.io/part-of: maintenance-reminder
+data:
+  SPRING_PROFILES_ACTIVE: kubernetes,persistent
+  ASSISTANT_DB_URL: jdbc:postgresql://postgres:5432/ai_assistant
+  ASSISTANT_DB_USERNAME: ai_assistant
+  ASSISTANT_RAG_KNOWLEDGE_PATH: /app/knowledge/01-vehicle-maintenance-knowledge.md
+  ASSISTANT_RAG_INGEST_ON_STARTUP: "true"
+  ASSISTANT_RAG_TOP_K: "5"
+  MAINTENANCE_REMINDER_BASE_URL: http://maintenance-reminder.cvp.svc.cluster.local:8080
+  TELEMETRY_BASE_URL: http://cvp-telemetry-service.cvp.svc.cluster.local:8080
+  INVENTORY_BASE_URL: http://cvp-inventory-service.cvp.svc.cluster.local:8080
+  ASSISTANT_TOOLS_TRANSPORT: mcp
+  ASSISTANT_MCP_BASE_URL: http://cvp-mcp-server.cvp.svc.cluster.local:8090/mcp
+  ASSISTANT_MCP_TIMEOUT: 10s
+  DEEPSEEK_ENABLED: "true"
+  DEEPSEEK_BASE_URL: https://api.deepseek.com
+  DEEPSEEK_MODEL: "deepseek-chat"
+  ASSISTANT_TURN_TIMEOUT: 20s
+  ASSISTANT_VEHICLE_ACCESS_ALLOW_ALL: "false"
+  ASSISTANT_VEHICLE_ACCESS_ALLOWED_VEHICLES: TEST-VEHICLE
+  ASSISTANT_MOCK_AUTHENTICATION_ENABLED: "true"
+  MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE: health,info,prometheus

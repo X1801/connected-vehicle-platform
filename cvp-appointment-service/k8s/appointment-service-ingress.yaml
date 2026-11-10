@@ -1,0 +1,18 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: appointment-service-ingress
+  namespace: cvp
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: appointment.local
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: appointment-service
+                port:
+                  number: 8085

@@ -1,0 +1,1 @@
+package com.cvp.maintenance.adapter.outbound.persistence; import org.springframework.data.jpa.repository.JpaRepository; import java.util.*; public interface AppointmentReminderRepository extends JpaRepository<AppointmentReminderEntity,UUID>{ Optional<AppointmentReminderEntity> findByReminderIdAndCompletedAtIsNull(UUID reminderId); }

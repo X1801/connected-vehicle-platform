@@ -1,0 +1,12 @@
+# Build output
+target/
+
+# IDE and operating-system files
+.idea/
+*.iml
+.DS_Store
+
+# Local environment overrides
+.env
+.env.*
+!.env.example

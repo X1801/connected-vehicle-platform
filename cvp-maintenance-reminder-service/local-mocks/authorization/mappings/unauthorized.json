@@ -1,0 +1,16 @@
+{
+  "priority": 10,
+  "request": {
+    "method": "GET",
+    "urlPath": "/v1/access/vehicles/TEST-VEHICLE"
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "Content-Type": "application/json"
+    },
+    "jsonBody": {
+      "authorized": false
+    }
+  }
+}

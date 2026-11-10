@@ -1,0 +1,3 @@
+package com.cvp.maintenance.adapter.outbound.persistence;
+import jakarta.persistence.*; import java.time.Instant; import java.util.UUID;
+@Entity @Table(name="appointment_reminder") public class AppointmentReminderEntity { @Id public UUID appointmentId; public UUID reminderId; public String vehicleId; public String serviceType; public String externalDmsReference; public Instant bookedAt; public Instant completedAt; protected AppointmentReminderEntity(){} public AppointmentReminderEntity(UUID a,UUID r,String v,String s,String d){appointmentId=a;reminderId=r;vehicleId=v;serviceType=s;externalDmsReference=d;bookedAt=Instant.now();} }

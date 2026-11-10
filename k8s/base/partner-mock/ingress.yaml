@@ -1,0 +1,13 @@
+# Source: cvp-partner-integration-mock/k8s/partner-integration-mock-ingress.yaml; backend points to the existing live Service.
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata: { name: partner-integration-mock-ingress, namespace: cvp }
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: partner-mock.local
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend: { service: { name: partner-integration-mock, port: { number: 8090 } } }

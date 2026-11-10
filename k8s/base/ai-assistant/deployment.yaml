@@ -1,0 +1,28 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ai-assistant-service
+  namespace: cvp
+  labels: { app: ai-assistant-service, app.kubernetes.io/name: cvp-ai-assistant-service, app.kubernetes.io/part-of: cvp-platform }
+spec:
+  replicas: 1
+  strategy: { type: RollingUpdate, rollingUpdate: { maxSurge: 0, maxUnavailable: 1 } }
+  selector: { matchLabels: { app: ai-assistant-service } }
+  template:
+    metadata: { labels: { app: ai-assistant-service, app.kubernetes.io/name: cvp-ai-assistant-service, app.kubernetes.io/part-of: cvp-platform } }
+    spec:
+      containers:
+        - name: assistant
+          image: docker.io/library/cvp-ai-assistant-service:k8s-20261104-1608
+          imagePullPolicy: IfNotPresent
+          ports: [{ name: http, containerPort: 8080 }]
+          envFrom: [{ configMapRef: { name: cvp-app-config } }]
+          env:
+            - name: ASSISTANT_DB_PASSWORD
+              valueFrom: { secretKeyRef: { name: cvp-database-credentials, key: AI_ASSISTANT_DB_PASSWORD } }
+            - name: DEEPSEEK_API_KEY
+              valueFrom: { secretKeyRef: { name: cvp-database-credentials, key: DEEPSEEK_API_KEY } }
+          readinessProbe: { httpGet: { path: /actuator/health/readiness, port: http }, initialDelaySeconds: 45, timeoutSeconds: 10, periodSeconds: 5, failureThreshold: 30 }
+          startupProbe: { httpGet: { path: /actuator/health, port: http }, periodSeconds: 5, timeoutSeconds: 3, failureThreshold: 180 }
+          livenessProbe: { httpGet: { path: /actuator/health/liveness, port: http }, initialDelaySeconds: 90, timeoutSeconds: 10, periodSeconds: 15, failureThreshold: 6 }
+          resources: { requests: { cpu: 150m, memory: 384Mi }, limits: { cpu: "1", memory: 768Mi } }

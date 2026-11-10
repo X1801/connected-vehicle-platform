@@ -1,0 +1,23 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: partner-integration-mock
+  namespace: cvp
+  labels: { app: partner-integration-mock, app.kubernetes.io/name: cvp-partner-integration-mock, app.kubernetes.io/part-of: cvp-platform }
+spec:
+  replicas: 1
+  strategy: { type: RollingUpdate, rollingUpdate: { maxSurge: 0, maxUnavailable: 1 } }
+  selector: { matchLabels: { app: partner-integration-mock } }
+  template:
+    metadata: { labels: { app: partner-integration-mock, app.kubernetes.io/name: cvp-partner-integration-mock, app.kubernetes.io/part-of: cvp-platform } }
+    spec:
+      containers:
+        - name: partner
+          image: docker.io/library/cvp-partner-integration-mock:k8s-20261104-1608
+          imagePullPolicy: IfNotPresent
+          ports: [{ name: http, containerPort: 8090 }]
+          envFrom: [{ configMapRef: { name: cvp-app-config } }]
+          readinessProbe: { httpGet: { path: /actuator/health/readiness, port: http }, initialDelaySeconds: 15, timeoutSeconds: 10, periodSeconds: 5 }
+          startupProbe: { httpGet: { path: /actuator/health, port: http }, periodSeconds: 5, timeoutSeconds: 3, failureThreshold: 180 }
+          livenessProbe: { httpGet: { path: /actuator/health/liveness, port: http }, initialDelaySeconds: 45, timeoutSeconds: 10, periodSeconds: 15, failureThreshold: 6 }
+          resources: { requests: { cpu: 80m, memory: 160Mi }, limits: { cpu: 500m, memory: 384Mi } }

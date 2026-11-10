@@ -1,0 +1,19 @@
+# Source: cvp-ai-assistant-service/k8s/05-ingress.yaml; backend points to the existing live Service.
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: ai-assistant-ingress
+  namespace: cvp
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: assistant.local
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: ai-assistant-service
+                port:
+                  number: 8080

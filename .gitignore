@@ -1,0 +1,36 @@
+# Build outputs and local tool caches
+**/build/
+**/target/
+**/BOOT-INF/
+**/out/
+**/dist/
+**/.gradle/
+**/.gradle-user/
+**/.m2/wrapper/dists/
+**/.idea/
+**/*.class
+
+# Runtime logs and disposable temporary files
+*.log
+*.log.*
+*.tmp
+*.temp
+**/.tmp/
+**/.gradle-cache/
+
+# Private working instructions and local credentials
+/prompts/
+**/workflow/prompts/
+**/workflow/reviews/
+**/workflow/analyse/
+**/workflow/**/result_report/
+**/workflow/docs/*prompt*.md
+**/.env
+**/.env.*
+!**/.env.example
+**/docs/
+**/knowledge/
+**/prompts/
+
+#Others
+**/AGENTS.md

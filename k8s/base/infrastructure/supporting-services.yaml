@@ -1,0 +1,24 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cvp-notification-mock
+  namespace: cvp
+  labels: { app: cvp-notification-mock, app.kubernetes.io/part-of: cvp-platform }
+spec:
+  replicas: 1
+  selector: { matchLabels: { app: cvp-notification-mock } }
+  template:
+    metadata: { labels: { app: cvp-notification-mock, app.kubernetes.io/part-of: cvp-platform } }
+    spec:
+      containers:
+        - name: notification-mock
+          image: docker.io/library/cvp-notification-mock:1.0
+          imagePullPolicy: IfNotPresent
+          env: [{ name: KAFKA_BOOTSTRAP_SERVERS, value: kafka:9092 }]
+          readinessProbe: { exec: { command: [/bin/sh, -c, "grep -a -q mock-notification-kafka.jar /proc/1/cmdline"] }, initialDelaySeconds: 10, periodSeconds: 10 }
+          resources: { requests: { cpu: 50m, memory: 96Mi }, limits: { cpu: 300m, memory: 256Mi } }
+---
+apiVersion: v1
+kind: Service
+metadata: { name: notification-mock, namespace: cvp, labels: { app.kubernetes.io/part-of: cvp-platform } }
+spec: { selector: { app: cvp-notification-mock }, ports: [{ name: http, port: 8080, targetPort: 8080 }] }

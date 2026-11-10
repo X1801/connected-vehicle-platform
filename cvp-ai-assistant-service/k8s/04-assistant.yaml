@@ -1,0 +1,95 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cvp-ai-assistant
+  namespace: cvp
+  labels:
+    app.kubernetes.io/name: cvp-ai-assistant
+    app.kubernetes.io/component: application
+    app.kubernetes.io/part-of: maintenance-reminder
+spec:
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: cvp-ai-assistant
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: cvp-ai-assistant
+        app.kubernetes.io/component: application
+        app.kubernetes.io/part-of: maintenance-reminder
+    spec:
+      volumes:
+        - name: assistant-knowledge
+          configMap:
+            name: assistant-knowledge
+      containers:
+        - name: assistant
+          image: cvp-ai-assistant-service:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 8080
+          envFrom:
+            - configMapRef:
+                name: cvp-ai-assistant-config
+            - secretRef:
+                name: cvp-ai-assistant-secrets
+                optional: true
+          env:
+            - name: DEEPSEEK_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: cvp-ai-assistant-secrets
+                  key: DEEPSEEK_API_KEY
+            - name: ASSISTANT_DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: cvp-ai-assistant-secrets
+                  key: ASSISTANT_DB_PASSWORD
+          volumeMounts:
+            - name: assistant-knowledge
+              mountPath: /app/knowledge
+              readOnly: true
+          resources:
+            requests:
+              cpu: 250m
+              memory: 512Mi
+            limits:
+              cpu: "1"
+              memory: 1Gi
+          startupProbe:
+            httpGet: { path: /actuator/health/liveness, port: http }
+            failureThreshold: 30
+            periodSeconds: 5
+          readinessProbe:
+            httpGet: { path: /actuator/health/readiness, port: http }
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          livenessProbe:
+            httpGet: { path: /actuator/health/liveness, port: http }
+            initialDelaySeconds: 20
+            periodSeconds: 15
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: cvp-ai-assistant
+  namespace: cvp
+  labels:
+    app.kubernetes.io/name: cvp-ai-assistant
+    app.kubernetes.io/component: application
+    app.kubernetes.io/part-of: maintenance-reminder
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: cvp-ai-assistant
+  ports:
+    - name: http
+      port: 8080
+      targetPort: http

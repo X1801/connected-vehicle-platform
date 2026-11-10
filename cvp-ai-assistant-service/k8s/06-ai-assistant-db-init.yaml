@@ -1,0 +1,27 @@
+# Uses the existing PostgreSQL server while leaving the maintenance reminder database and its schema untouched.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: ai-assistant-db-init
+  namespace: cvp
+spec:
+  ttlSecondsAfterFinished: 300
+  template:
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: create-ai-assistant-database
+          image: postgres:16-alpine
+          envFrom:
+            - secretRef:
+                name: maintenance-reminder-postgres
+            - secretRef:
+                name: cvp-ai-assistant-secrets
+          command: ["sh", "-ec"]
+          args:
+            - |
+              export PGPASSWORD="$POSTGRES_PASSWORD"
+              psql -h postgres -U "$POSTGRES_USER" -d postgres -v ON_ERROR_STOP=1 -c "DO \$\$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'ai_assistant') THEN CREATE ROLE ai_assistant LOGIN PASSWORD '$ASSISTANT_DB_PASSWORD'; END IF; END \$\$;"
+              if [ "$(psql -h postgres -U "$POSTGRES_USER" -d postgres -tAc "SELECT 1 FROM pg_database WHERE datname = 'ai_assistant'")" != "1" ]; then
+                psql -h postgres -U "$POSTGRES_USER" -d postgres -v ON_ERROR_STOP=1 -c "CREATE DATABASE ai_assistant OWNER ai_assistant"
+              fi

@@ -1,0 +1,79 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: maintenance-reminder
+  namespace: cvp
+  labels:
+    app.kubernetes.io/name: maintenance-reminder
+    app.kubernetes.io/component: application
+    app.kubernetes.io/part-of: maintenance-reminder
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: maintenance-reminder
+      app.kubernetes.io/component: application
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: maintenance-reminder
+        app.kubernetes.io/component: application
+        app.kubernetes.io/part-of: maintenance-reminder
+    spec:
+      terminationGracePeriodSeconds: 30
+      containers:
+        - name: maintenance-reminder
+          image: cvp-maintenance-reminder-service:1.0
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 8080
+          envFrom:
+            - configMapRef:
+                name: maintenance-reminder-runtime
+            - secretRef:
+                name: maintenance-reminder-postgres
+          startupProbe:
+            httpGet:
+              path: /actuator/health
+              port: http
+            failureThreshold: 30
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /actuator/health/readiness
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: http
+            initialDelaySeconds: 15
+            periodSeconds: 15
+          resources:
+            requests:
+              cpu: 250m
+              memory: 512Mi
+            limits:
+              cpu: "1"
+              memory: 768Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: maintenance-reminder
+  namespace: cvp
+  labels:
+    app.kubernetes.io/name: maintenance-reminder
+    app.kubernetes.io/component: application
+    app.kubernetes.io/part-of: maintenance-reminder
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: maintenance-reminder
+    app.kubernetes.io/component: application
+  ports:
+    - name: http
+      port: 8080
+      targetPort: http

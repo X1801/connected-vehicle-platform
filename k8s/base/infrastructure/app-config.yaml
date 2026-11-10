@@ -1,0 +1,48 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cvp-app-config
+  namespace: cvp
+  labels: { app.kubernetes.io/part-of: cvp-platform }
+data:
+  JAVA_TOOL_OPTIONS: -XX:MaxRAMPercentage=55.0
+  INVENTORY_DB_URL: jdbc:postgresql://postgres:5432/inventory
+  INVENTORY_DB_USERNAME: cvp_test
+  INVENTORY_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+  TELEMETRY_DB_URL: jdbc:postgresql://postgres:5432/telemetry
+  TELEMETRY_DB_USERNAME: cvp_test
+  TELEMETRY_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+  APPOINTMENT_DB_URL: jdbc:postgresql://postgres:5432/appointment
+  APPOINTMENT_DB_USERNAME: cvp_test
+  APPOINTMENT_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+  APPOINTMENT_PARTNER_INTEGRATION_BASE_URL: http://partner-integration-mock:8090
+  PARTNER_MOCK_APPOINTMENT_BASE_URL: http://appointment-service:8085
+  CVP_MAINTENANCE_REMINDER_DB_URL: jdbc:postgresql://postgres:5432/maintenance-reminder
+  CVP_MAINTENANCE_REMINDER_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+  CVP_TELEMETRY_BASE_URL: http://telemetry-service:8080
+  CVP_INVENTORY_BASE_URL: http://inventory-service:8080
+  CVP_NOTIFICATION_BASE_URL: http://notification-mock:8080
+  MAINTENANCE_REMINDER_BASE_URL: http://maintenance-reminder-service:8080
+  TELEMETRY_BASE_URL: http://telemetry-service:8080
+  INVENTORY_BASE_URL: http://inventory-service:8080
+  MCP_DOWNSTREAM_TIMEOUT: 5s
+  SPRING_PROFILES_ACTIVE: kubernetes,persistent
+  ASSISTANT_DB_URL: jdbc:postgresql://postgres:5432/ai_assistant
+  ASSISTANT_DB_USERNAME: ai_assistant
+  ASSISTANT_RAG_KNOWLEDGE_PATH: /app/knowledge/01-vehicle-maintenance-knowledge.md
+  ASSISTANT_RAG_INGEST_ON_STARTUP: "true"
+  ASSISTANT_RAG_TOP_K: "5"
+  ASSISTANT_TOOLS_TRANSPORT: mcp
+  ASSISTANT_MCP_BASE_URL: http://mcp-server:8090/mcp
+  ASSISTANT_MCP_TIMEOUT: 10s
+  DEEPSEEK_ENABLED: "true"
+  DEEPSEEK_BASE_URL: https://api.deepseek.com
+  DEEPSEEK_MODEL: deepseek-chat
+  ASSISTANT_TURN_TIMEOUT: 20s
+  ASSISTANT_VEHICLE_ACCESS_ALLOW_ALL: "false"
+  ASSISTANT_VEHICLE_ACCESS_ALLOWED_VEHICLES: TEST-VEHICLE
+  ASSISTANT_MOCK_AUTHENTICATION_ENABLED: "true"
+  CVP_MAINTENANCE_REMINDER_SERVER_PORT: "8080"
+  CVP_MAINTENANCE_REMINDER_KAFKA_CONSUMER_GROUP: maintenance-reminder-k8s
+  APPOINTMENT_SERVER_PORT: "8085"
+  PARTNER_MOCK_SERVER_PORT: "8090"

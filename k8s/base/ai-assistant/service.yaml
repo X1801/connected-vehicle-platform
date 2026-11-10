@@ -1,0 +1,4 @@
+apiVersion: v1
+kind: Service
+metadata: { name: ai-assistant-service, namespace: cvp, labels: { app: ai-assistant-service, app.kubernetes.io/part-of: cvp-platform } }
+spec: { selector: { app: ai-assistant-service }, ports: [ { name: http, port: 8080, targetPort: http } ] }

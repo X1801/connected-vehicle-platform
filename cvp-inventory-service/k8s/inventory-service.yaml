@@ -1,0 +1,26 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata: {name: cvp-inventory-service, namespace: cvp}
+spec:
+  replicas: 1
+  selector: {matchLabels: {app: cvp-inventory-service}}
+  template:
+    metadata: {labels: {app: cvp-inventory-service}}
+    spec:
+      containers:
+        - name: inventory
+          image: cvp-inventory-service:latest
+          env:
+            - {name: INVENTORY_DB_URL, value: jdbc:postgresql://postgres:5432/inventory}
+            - name: INVENTORY_DB_USERNAME
+              valueFrom: { secretKeyRef: { name: maintenance-reminder-postgres, key: POSTGRES_USER } }
+            - name: INVENTORY_DB_PASSWORD
+              valueFrom: { secretKeyRef: { name: maintenance-reminder-postgres, key: POSTGRES_PASSWORD } }
+            - {name: INVENTORY_KAFKA_BOOTSTRAP_SERVERS, value: kafka:9092}
+          ports: [{containerPort: 8080}]
+          readinessProbe: {httpGet: {path: /actuator/health, port: 8080}, initialDelaySeconds: 10}
+---
+apiVersion: v1
+kind: Service
+metadata: {name: cvp-inventory-service, namespace: cvp}
+spec: {selector: {app: cvp-inventory-service}, ports: [{port: 8080,targetPort: 8080}]}

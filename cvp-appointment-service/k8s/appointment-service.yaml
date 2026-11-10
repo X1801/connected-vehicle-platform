@@ -1,0 +1,36 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: appointment-service
+  namespace: cvp
+  labels: { app.kubernetes.io/name: appointment-service }
+spec:
+  replicas: 1
+  selector: { matchLabels: { app.kubernetes.io/name: appointment-service } }
+  template:
+    metadata: { labels: { app.kubernetes.io/name: appointment-service } }
+    spec:
+      containers:
+        - name: appointment-service
+          image: cvp-appointment-service:latest
+          imagePullPolicy: IfNotPresent
+          ports: [ { name: http, containerPort: 8085 } ]
+          env:
+            - { name: APPOINTMENT_DB_URL, value: jdbc:postgresql://postgres:5432/appointment }
+            - name: APPOINTMENT_DB_USERNAME
+              valueFrom: { secretKeyRef: { name: maintenance-reminder-postgres, key: CVP_MAINTENANCE_REMINDER_DB_USERNAME } }
+            - name: APPOINTMENT_DB_PASSWORD
+              valueFrom: { secretKeyRef: { name: maintenance-reminder-postgres, key: CVP_MAINTENANCE_REMINDER_DB_PASSWORD } }
+            - { name: APPOINTMENT_KAFKA_BOOTSTRAP_SERVERS, value: kafka:9092 }
+            - { name: APPOINTMENT_PARTNER_INTEGRATION_BASE_URL, value: http://partner-integration-mock:8090 }
+          readinessProbe: { httpGet: { path: /actuator/health/readiness, port: http }, initialDelaySeconds: 10 }
+          livenessProbe: { httpGet: { path: /actuator/health/liveness, port: http }, initialDelaySeconds: 20 }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: appointment-service
+  namespace: cvp
+spec:
+  selector: { app.kubernetes.io/name: appointment-service }
+  ports: [ { name: http, port: 8085, targetPort: http } ]

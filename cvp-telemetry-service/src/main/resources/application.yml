@@ -1,0 +1,23 @@
+spring:
+  application:
+    name: cvp-telemetry-service
+  datasource:
+    url: ${TELEMETRY_DB_URL:jdbc:postgresql://localhost:5432/telemetry}
+    username: ${TELEMETRY_DB_USERNAME:}
+    password: ${TELEMETRY_DB_PASSWORD:}
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+  kafka:
+    bootstrap-servers: ${TELEMETRY_KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+server:
+  port: ${TELEMETRY_SERVER_PORT:8080}
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+telemetry:
+  maintenance-state-topic: ${TELEMETRY_MAINTENANCE_STATE_TOPIC:telemetry.vehicle-maintenance-state.v1}
+  management-enabled: ${TELEMETRY_MANAGEMENT_ENABLED:true}
